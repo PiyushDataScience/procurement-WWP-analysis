@@ -311,7 +311,7 @@ def load_html_template():
     )
 
     # Hide Streamlit default elements
-    hide_streamlit_style = """
+    hide_streamlit_style = 
         <style>
             #MainMenu {visibility: hidden;}
             header {visibility: hidden;}
@@ -329,9 +329,9 @@ def load_html_template():
             section[data-testid="stSidebar"] {
                 background-color: #1A1A1A;
             }
-        </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+        </style>"""
+   
+    """st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
     # Render the HTML template
     components.html(

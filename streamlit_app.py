@@ -1,4 +1,3 @@
-!pip install streamlit
 import streamlit as st
 import streamlit.components.v1 as components
 from pathlib import Path
@@ -111,5 +110,5 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    # Render HTML template
-    components.html(load_html_template(), height=800, scrolling=False)
+if __name__ == "__main__":
+    main()

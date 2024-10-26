@@ -1,8 +1,6 @@
+# streamlit_app.py
 import streamlit as st
 import streamlit.components.v1 as components
-from pathlib import Path
-import base64
-import json
 
 def load_html_template():
     """Load the HTML template and inject necessary modifications for Streamlit"""
@@ -17,15 +15,9 @@ def load_html_template():
         <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
         <style>
-            /* Your existing styles here */
             :root {
                 --schneider-green: #3DCD58;
                 --schneider-dark: #1A1A1A;
-            }
-
-            body {
-                background-color: var(--schneider-dark);
-                color: #ffffff;
             }
 
             .se-gradient {
@@ -48,7 +40,7 @@ def load_html_template():
             }
         </style>
     </head>
-    <body class="min-h-screen">
+    <body style="background-color: #1A1A1A; min-height: 100vh;">
         <div id="content">
             <!-- Analysis Type Selection -->
             <div class="container mx-auto px-4 py-8">
@@ -79,27 +71,22 @@ def load_html_template():
                 </div>
             </div>
         </div>
-
-        <script>
-            // Handle communication with Streamlit
-            function sendToStreamlit(data) {
-                window.parent.postMessage({type: 'streamlit', data: data}, '*');
-            }
-        </script>
     </body>
     </html>
     """
     return html_content
 
 def main():
+    # Configure the page
     st.set_page_config(
         page_title="Procurement Analysis",
+        page_icon="📊",
         layout="wide",
         initial_sidebar_state="collapsed"
     )
 
-    # Inject custom CSS to hide Streamlit elements
-    st.markdown("""
+    # Hide Streamlit default elements
+    hide_streamlit_style = """
         <style>
             #MainMenu {visibility: hidden;}
             header {visibility: hidden;}
@@ -107,8 +94,26 @@ def main():
             .stApp {
                 margin-top: -80px;
             }
+            /* Force the background color */
+            .stApp > header {
+                background-color: #1A1A1A;
+            }
+            .stApp {
+                background-color: #1A1A1A;
+            }
+            section[data-testid="stSidebar"] {
+                background-color: #1A1A1A;
+            }
         </style>
-    """, unsafe_allow_html=True)
+    """
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+    # Render the HTML template
+    components.html(
+        load_html_template(),
+        height=800,
+        scrolling=False
+    )
 
 if __name__ == "__main__":
     main()

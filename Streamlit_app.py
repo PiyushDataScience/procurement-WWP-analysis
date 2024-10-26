@@ -308,26 +308,25 @@ components.html(html_content, height=1000)
 # File uploader logic
 uploaded_files = st.file_uploader(
     "Upload your files (multiple files allowed)",
-    type=["xlsx", "csv", "zip"],
+    type=["xlsx"],
     accept_multiple_files=True
 )
 
 # Define function to run Open PO analysis
 def run_open_po_analysis(files):
     if len(files) >= 2:
-        open_po_file = files[0]  # Assuming the first file is Open PO
-        wb_file = files[1]        # Assuming the second file is WB
-
-        # Load the files into DataFrames
+        # Read the files from uploaded objects
         try:
-            open_po_bef = pd.read_excel(open_po_file)  # Load Open PO file
-            wb = pd.read_excel(wb_file)                # Load WB file
+            open_po_bef = pd.read_excel(files[0])  # Load Open PO file
+            wb = pd.read_excel(files[1])            # Load WB file
             
             # Call the Open PO analysis function
             result_df = open_po_analysis(open_po_bef, wb)  # Run analysis
-            
+
             # Display results
             st.write(result_df)  # Display analysis results as a DataFrame
+            
+            # Download button for results
             st.download_button(
                 label="Download Analysis Results",
                 data=result_df.to_excel(index=False),
@@ -343,6 +342,10 @@ def run_open_po_analysis(files):
 # Trigger the analysis based on the selected type
 if uploaded_files:
     analysis_type = st.selectbox("Select Analysis Type", ["Select an analysis...", "Open PO"])
+    
+    if analysis_type == "Open PO":
+        run_open_po_analysis(uploaded_files)
+         
     
     if analysis_type == "Open PO":
         run_open_po_analysis(uploaded_files)

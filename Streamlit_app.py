@@ -27,13 +27,7 @@ html_content = """
             background-color: var(--schneider-dark);
             color: #ffffff;
         }
-        
-        .container {
-            max-width: 10000px;  /* Set a specific width or use 100% */
-            width: 100%;         /* Optional: Ensures it fills the available width */
-            margin: 0 auto;      /* Center the container */
-            padding: 0 2rem;    /* Add side padding */
-            
+                   
         .se-gradient {
             background: linear-gradient(135deg, #3DCD58 0%, #2A8E3C 100%);
         }

@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import streamlit.components.v1 as components
-from analysis_logic import open_po_analysis  # Update with your actual path for your analysis logic
+from analysis_logic import open_po_analysis  # Import your analysis logic
 
 # Set up the page configuration for Streamlit
 st.set_page_config(page_title="Procurement Analysis Tool", page_icon="📊")
@@ -80,7 +80,7 @@ html_content = """
                 <h2 class="text-3xl font-bold mb-8 text-[#3DCD58]">New Analysis</h2>
                 <form id="analysisForm" class="space-y-8">
 
-                    <!-- Analysis Type Selection -->
+                    <!-- Single Analysis Type Selection -->
                     <div class="relative">
                         <label class="block text-gray-400 text-lg font-medium mb-3">Select Analysis Type</label>
                         <select id="analysisType" name="analysis_type" class="custom-select text-lg">
@@ -92,7 +92,7 @@ html_content = """
                     </div>
 
                     <!-- File Upload Zone -->
-                    <div class="upload-area" id="uploadZone">
+                    <div class="upload-area">
                         <input type="file" id="fileInput" name="file" accept=".xlsx,.csv,.zip" class="hidden" multiple>
                         <label for="fileInput" class="cursor-pointer">
                             <p>Drop your file(s) here or click to upload</p>
@@ -107,18 +107,10 @@ html_content = """
                 </form>
             </div>
         </div>
-
-        <!-- Loading Indicator -->
-        <div id="loadingIndicator" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div class="bg-[#2A2A2A] rounded-xl p-8 flex items-center space-x-4">
-                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#3DCD58]"></div>
-                <span class="text-white">Processing your analysis...</span>
-            </div>
-        </div>
     </div>
 
     <script>
-        // Simple interactivity for file input based on selected analysis type
+        // JavaScript interactivity for file input
         document.getElementById('analysisType').addEventListener('change', function() {
             const fileInput = document.getElementById('fileInput');
             const submitButton = document.querySelector('button[type="submit"]');
@@ -137,7 +129,3 @@ html_content = """
 
 # Render the HTML frontend
 components.html(html_content, height=800)
-
-# User Interaction
-analysis_type = st.selectbox("Select Analysis Type", ["Select an analysis...", "Open PO", "WWP", "Rejected Part"])
-uploaded_files = st.file_uploader("Upload your files (multiple files allowed)", type=["xlsx", "csv", "zip"], accept_multiple_files=True)

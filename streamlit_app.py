@@ -1,150 +1,148 @@
 import streamlit as st
 import streamlit.components.v1 as components
-from pathlib import Path
-import base64
 
-def load_custom_css():
+def load_html_template():
     return """
-    <style>
-        /* Root variables */
-        :root {
-            --schneider-green: #3DCD58;
-            --schneider-dark: #1A1A1A;
-        }
-        
-        /* Global styles */
-        .main {
-            background-color: var(--schneider-dark) !important;
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-        }
-        .stApp {
-            background-color: var(--schneider-dark) !important;
-        }
-        
-        /* Navigation styling */
-        .nav-container {
-            background-color: var(--schneider-dark);
-            border-bottom: 1px solid rgba(61, 205, 88, 0.2);
-            padding: 1rem;
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .nav-links {
-            display: flex;
-            gap: 1.5rem;
-        }
-        
-        .nav-link {
-            color: #808080;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-        
-        .nav-link:hover {
-            color: var(--schneider-green);
-        }
-        
-        /* Card styling */
-        .se-card {
-            background: rgba(26, 26, 26, 0.95);
-            border: 1px solid rgba(61, 205, 88, 0.2);
-            border-radius: 1rem;
-            padding: 2rem;
-            box-shadow: 0 0 15px rgba(61, 205, 88, 0.1);
-            backdrop-filter: blur(10px);
-            margin: 2rem 0;
-        }
-        
-        /* Button styling */
-        .stButton > button {
-            background: linear-gradient(135deg, #3DCD58 0%, #2A8E3C 100%) !important;
-            color: white !important;
-            border: none !important;
-            padding: 1rem 2rem !important;
-            border-radius: 0.5rem !important;
-            font-weight: 500 !important;
-            width: 100% !important;
-            transition: transform 0.3s ease !important;
-        }
-        
-        .stButton > button:hover {
-            transform: scale(1.05);
-        }
-        
-        .stButton > button:disabled {
-            opacity: 0.5;
-            transform: none;
-        }
-        
-        /* File uploader styling */
-        .uploadedFile {
-            background-color: #2A2A2A !important;
-            border: 2px dashed rgba(61, 205, 88, 0.3) !important;
-            border-radius: 0.5rem !important;
-            padding: 1.5rem !important;
-            margin: 1rem 0 !important;
-        }
-        
-        .uploadedFile:hover {
-            border-color: rgba(61, 205, 88, 0.6) !important;
-        }
-        
-        /* Select box styling */
-        .stSelectbox > div > div {
-            background-color: #2A2A2A !important;
-            border: 1px solid rgba(61, 205, 88, 0.3) !important;
-            border-radius: 0.5rem !important;
-            color: white !important;
-        }
-        
-        .stSelectbox > div > div:hover {
-            border-color: var(--schneider-green) !important;
-        }
-        
-        /* Text styling */
-        .title {
-            color: white;
-            font-size: 2.5rem;
-            text-align: center;
-            margin-bottom: 0.5rem;
-        }
-        
-        .subtitle {
-            color: #808080;
-            text-align: center;
-            font-size: 1.1rem;
-        }
-        
-        .section-title {
-            color: var(--schneider-green);
-            font-size: 1.8rem;
-            margin-bottom: 1rem;
-        }
-        
-        /* Hide Streamlit branding */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        
-        /* Hexagon background */
-        .hexagon-bg {
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5L55 20V40L30 55L5 40V20L30 5Z' fill='none' stroke='rgba(61, 205, 88, 0.1)' stroke-width='1'/%3E%3C/svg%3E");
-            background-size: 60px 60px;
-        }
-    </style>
-    """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Procurement Analysis - Schneider Electric</title>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+        <style>
+            :root {
+                --schneider-green: #3DCD58;
+                --schneider-dark: #1A1A1A;
+            }
+            
+            body {
+                background-color: var(--schneider-dark);
+                color: #ffffff;
+            }
 
-def get_base64_logo():
-    # You would need to replace this with the actual Schneider Electric logo
-    # For now, we'll use a placeholder SVG
-    return """
-    <svg width="200" height="50" viewBox="0 0 200 50">
-        <rect width="200" height="50" fill="#3DCD58"/>
-        <text x="20" y="30" fill="white" font-size="20">Schneider Electric</text>
-    </svg>
+            .se-gradient {
+                background: linear-gradient(135deg, #3DCD58 0%, #2A8E3C 100%);
+            }
+
+            .glow-effect {
+                box-shadow: 0 0 15px rgba(61, 205, 88, 0.3);
+                transition: all 0.3s ease;
+            }
+
+            .glow-effect:hover {
+                box-shadow: 0 0 30px rgba(61, 205, 88, 0.5);
+            }
+
+            .se-card {
+                background: rgba(26, 26, 26, 0.95);
+                border: 1px solid rgba(61, 205, 88, 0.2);
+                backdrop-filter: blur(10px);
+            }
+
+            .hexagon-bg {
+                background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5L55 20V40L30 55L5 40V20L30 5Z' fill='none' stroke='rgba(61, 205, 88, 0.1)' stroke-width='1'/%3E%3C/svg%3E");
+                background-size: 60px 60px;
+            }
+
+            .custom-select-wrapper {
+                position: relative;
+            }
+
+            .custom-select {
+                appearance: none;
+                -webkit-appearance: none;
+                background-color: #2A2A2A;
+                border: 1px solid rgba(61, 205, 88, 0.3);
+                border-radius: 0.5rem;
+                padding: 0.75rem 1rem;
+                padding-right: 2.5rem;
+                font-size: 1rem;
+                color: white;
+                width: 100%;
+                cursor: pointer;
+            }
+
+            .custom-select:focus {
+                outline: none;
+                border-color: #3DCD58;
+            }
+
+            /* Hide Streamlit elements */
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            .stDeployButton {display: none;}
+            
+            /* Override Streamlit defaults */
+            .stApp {
+                background: none;
+            }
+        </style>
+    </head>
+    <body class="min-h-screen hexagon-bg">
+        <div id="custom-content">
+            <!-- Navigation Bar -->
+            <nav class="bg-[#1A1A1A] border-b border-[#3DCD58]/20 p-4">
+                <div class="container mx-auto flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Schneider_Electric_2007.svg/2560px-Schneider_Electric_2007.svg.png" alt="Schneider Electric Logo" class="h-10">
+                        <span class="text-xl font-bold text-white">Procurement Analytics</span>
+                    </div>
+                    <div class="flex items-center space-x-6">
+                        <a href="#" class="text-gray-300 hover:text-[#3DCD58] transition-colors">Dashboard</a>
+                        <a href="#" class="text-gray-300 hover:text-[#3DCD58] transition-colors">History</a>
+                        <a href="#" class="text-gray-300 hover:text-[#3DCD58] transition-colors">Help</a>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container mx-auto px-4 py-8">
+                <!-- Hero Section -->
+                <div class="text-center mb-12 animate__animated animate__fadeIn">
+                    <h1 class="text-4xl font-bold mb-4">Procurement Analysis Tool</h1>
+                    <p class="text-gray-400">Powered by India Effectiveness Team</p>
+                </div>
+
+                <!-- Streamlit content will be injected here -->
+                <div id="streamlit_content"></div>
+            </div>
+        </div>
+
+        <script>
+            // Script to handle UI interactions
+            document.addEventListener('DOMContentLoaded', function() {
+                // Your existing JavaScript code from the HTML template
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.addedNodes.length) {
+                            setupCustomElements();
+                        }
+                    });
+                });
+
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+
+                function setupCustomElements() {
+                    // Add custom styling to Streamlit elements
+                    const selectBoxes = document.querySelectorAll('.stSelectbox select');
+                    selectBoxes.forEach(select => {
+                        select.classList.add('custom-select');
+                    });
+
+                    const buttons = document.querySelectorAll('.stButton button');
+                    buttons.forEach(button => {
+                        button.classList.add('se-gradient', 'glow-effect');
+                    });
+                }
+            });
+        </script>
+    </body>
+    </html>
     """
 
 def main():
@@ -156,41 +154,17 @@ def main():
         initial_sidebar_state="collapsed"
     )
 
-    # Inject custom CSS
-    st.markdown(load_custom_css(), unsafe_allow_html=True)
+    # Inject the custom HTML template
+    components.html(load_html_template(), height=0, width=0)
 
-    # Navigation
-    st.markdown(f"""
-        <div class="nav-container">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                {get_base64_logo()}
-                <span style="font-size: 1.5rem; font-weight: bold;">Procurement Analytics</span>
-            </div>
-            <div class="nav-links">
-                <a href="#" class="nav-link">Dashboard</a>
-                <a href="#" class="nav-link">History</a>
-                <a href="#" class="nav-link">Help</a>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Header
-    st.markdown("""
-        <div class="title animate__animated animate__fadeIn">
-            Procurement Analysis Tool
-        </div>
-        <div class="subtitle animate__animated animate__fadeIn">
-            Powered by India Effectiveness Team
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Main content container
+    # Main content
     with st.container():
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            st.markdown('<div class="se-card">', unsafe_allow_html=True)
-            
-            st.markdown('<h2 class="section-title">New Analysis</h2>', unsafe_allow_html=True)
+            st.markdown("""
+                <div class="se-card rounded-xl p-8 glow-effect w-full max-w-3xl">
+                    <h2 class="text-3xl font-bold mb-8 text-[#3DCD58]">New Analysis</h2>
+                """, unsafe_allow_html=True)
             
             # Analysis Type Selection
             analysis_type = st.selectbox(
@@ -200,43 +174,97 @@ def main():
             )
 
             if analysis_type != "Select an analysis...":
-                st.markdown('<h3 style="color: #3DCD58; margin-top: 1.5rem; font-size: 1.2rem;">Required Files:</h3>', unsafe_allow_html=True)
+                st.markdown("""
+                    <div class="animate__animated animate__fadeIn">
+                        <h3 class="text-xl font-medium text-[#3DCD58] mb-3">Required Files:</h3>
+                    </div>
+                """, unsafe_allow_html=True)
                 
                 if analysis_type == "Open PO Analysis":
                     st.markdown("""
-                        * Open PO Report (.xlsx or .csv)
-                        * Workbench File (.xlsx or .csv)
-                    """)
+                        <ul class="list-disc pl-6 text-gray-400 space-y-2 text-lg">
+                            <li>Open PO Report (.xlsx or .csv)</li>
+                            <li>Workbench File (.xlsx or .csv)</li>
+                        </ul>
+                    """, unsafe_allow_html=True)
                 elif analysis_type == "WWP Analysis":
-                    st.markdown("* CAP Base Report (.xlsx or .csv)")
+                    st.markdown("""
+                        <ul class="list-disc pl-6 text-gray-400 space-y-2 text-lg">
+                            <li>CAP Base Report (.xlsx or .csv)</li>
+                        </ul>
+                    """, unsafe_allow_html=True)
                 elif analysis_type == "Rejected Part Analysis":
-                    st.markdown("* PDM ZIP File (.zip)")
+                    st.markdown("""
+                        <ul class="list-disc pl-6 text-gray-400 space-y-2 text-lg">
+                            <li>PDM ZIP File (.zip)</li>
+                        </ul>
+                    """, unsafe_allow_html=True)
 
-                # File uploader with custom styling
+                # File uploader
                 uploaded_files = st.file_uploader(
                     "Drop your file(s) here or click to upload",
                     accept_multiple_files=True,
                     type=['xlsx', 'csv', 'zip'],
-                    help="Supported formats: .xlsx, .csv, .zip",
-                    key="file_uploader"
+                    help="Supported formats: .xlsx, .csv, .zip"
                 )
 
                 if uploaded_files:
-                    st.markdown('<h3 style="color: #3DCD58; margin-top: 1.5rem; font-size: 1.2rem;">Uploaded Files:</h3>', unsafe_allow_html=True)
-                    for file in uploaded_files:
-                        st.markdown(f"* {file.name}")
+                    st.markdown("""
+                        <div class="animate__animated animate__fadeIn">
+                            <h3 class="text-xl font-medium text-[#3DCD58] mb-3">Uploaded Files:</h3>
+                        </div>
+                    """, unsafe_allow_html=True)
                     
-                    if st.button("Run Analysis", key="run_analysis"):
+                    for file in uploaded_files:
+                        st.markdown(f"""
+                            <div class="text-gray-400 text-lg">• {file.name}</div>
+                        """, unsafe_allow_html=True)
+                    
+                    if st.button("Run Analysis"):
                         with st.spinner('Processing your analysis...'):
                             # Add your analysis logic here
-                            # For demonstration, we'll just show a success message
                             st.success('Analysis completed successfully!')
 
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
-    # Add hexagon background
+    # Additional custom CSS to ensure proper styling
     st.markdown("""
-        <div class="hexagon-bg" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;"></div>
+        <style>
+            .stApp {
+                background-color: transparent;
+            }
+            
+            .stSelectbox > div > div {
+                background-color: #2A2A2A !important;
+                border: 1px solid rgba(61, 205, 88, 0.3) !important;
+            }
+            
+            .stButton > button {
+                background: linear-gradient(135deg, #3DCD58 0%, #2A8E3C 100%);
+                color: white;
+                border: none;
+                padding: 0.75rem 2rem;
+                font-weight: 500;
+                width: 100%;
+                transition: all 0.3s ease;
+            }
+            
+            .stButton > button:hover {
+                box-shadow: 0 0 30px rgba(61, 205, 88, 0.5);
+                transform: scale(1.05);
+            }
+            
+            .uploadedFile {
+                border: 2px dashed rgba(61, 205, 88, 0.3);
+                border-radius: 0.5rem;
+                background-color: transparent !important;
+            }
+            
+            /* Hide Streamlit elements */
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+        </style>
     """, unsafe_allow_html=True)
 
 if __name__ == "__main__":

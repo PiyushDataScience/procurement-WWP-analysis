@@ -303,6 +303,6 @@ html_content = """
 </html>"""
 
 # Render the HTML frontend
-components.html(html_content, height=800)
+components.html(html_content, height=1000)
 
 

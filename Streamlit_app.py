@@ -30,7 +30,7 @@ html_content = """
         
         .container {
             max-width: 2000px;  /* Set a specific width or use 100% */
-            width: 200%;         /* Optional: Ensures it fills the available width */
+            width: 100%;         /* Optional: Ensures it fills the available width */
             margin: 0 auto;      /* Center the container */
             padding: 0 2rem;    /* Add side padding */
             

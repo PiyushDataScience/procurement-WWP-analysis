@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import streamlit.components.v1 as components
-from analysis_logic import open_po_analysis  # Import your analysis logic
+from analysis_logic.Openpo import run as open_po_analysis   
 
 # Set up the page configuration for Streamlit
 st.set_page_config(page_title="Procurement Analysis Tool", page_icon="📊")
@@ -305,4 +305,38 @@ html_content = """
 # Render the HTML frontend
 components.html(html_content, height=1000)
 
+# Define function to run Open PO analysis
+def run_open_po_analysis(files):
+    if len(files) >= 2:
+        open_po_file = files[0]  # Assuming the first file is Open PO
+        wb_file = files[1]        # Assuming the second file is WB
+
+        # Load the files into DataFrames
+        try:
+            open_po_bef = pd.read_excel(open_po_file)  # Load Open PO file
+            wb = pd.read_excel(wb_file)                # Load WB file
+            
+            # Call the Open PO analysis function
+            result_df = open_po_analysis(open_po_bef, wb)  # Run analysis
+            
+            # Display results
+            st.write(result_df)  # Display analysis results as a DataFrame
+            st.download_button(
+                label="Download Analysis Results",
+                data=result_df.to_excel(index=False),
+                file_name="Open_PO_Analysis_Results.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            
+        except Exception as e:
+            st.error(f"Error loading files: {e}")
+    else:
+        st.error("Please upload at least two files.")
+
+# Trigger the analysis based on the selected type
+if uploaded_files:
+    analysis_type = st.selectbox("Select Analysis Type", ["Select an analysis...", "Open PO"])
+    
+    if analysis_type == "Open PO":
+        run_open_po_analysis(uploaded_files)
 

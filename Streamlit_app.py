@@ -305,6 +305,13 @@ html_content = """
 # Render the HTML frontend
 components.html(html_content, height=1000)
 
+# File uploader logic
+uploaded_files = st.file_uploader(
+    "Upload your files (multiple files allowed)",
+    type=["xlsx", "csv", "zip"],
+    accept_multiple_files=True
+)
+
 # Define function to run Open PO analysis
 def run_open_po_analysis(files):
     if len(files) >= 2:

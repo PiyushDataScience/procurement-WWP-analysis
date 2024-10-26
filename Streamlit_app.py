@@ -30,7 +30,7 @@ html_content = """
         }
 
         .container {
-            max-width: 100vw;  /* Ensure the container uses full viewport width */
+            max-width: 1000vw;  /* Ensure the container uses full viewport width */
             padding: 0 2rem;   /* Add side padding */
         }
 

@@ -301,7 +301,7 @@ def load_html_template():
     """
     return html_content
 
-def main():
+"""def main():
     # Configure the page
     st.set_page_config(
         page_title="Procurement Analysis",
@@ -338,7 +338,7 @@ def main():
         load_html_template(),
         height=800,
         scrolling=False
-    )
+    )"""
 
 if __name__ == "__main__":
     main()

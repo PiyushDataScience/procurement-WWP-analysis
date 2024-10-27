@@ -109,7 +109,80 @@ def load_css():
         }}
         </style>
     """, unsafe_allow_html=True)
+def process_dataframe(df):
+    """Process the input dataframe according to business logic"""
+    try:
+        # Rename columns
+        column_mapping = {
+            'Part Number (Standardized)': 'Part Number',
+            'Supplier DUNS Elementary Code': 'DUNS Elementary Code',
+            'Next 12m Projection Quantity (Normalized UoM)': '12m Projection Quantity',
+            'Line Price (EUR/NUoM) (Includes SQL FX)': 'Unit Price in Euros',
+            'CPR:Best Line Price (including Logistics Simulation Delta if any) (EUR/NUoM) (Global)': 'Best Price in Euros',
+            'CPR:Quantity of Best Price Line (NUoM) (Global)': 'Best Price Quantity',
+            'CPR:Site Name of Best Price Line (Global)': 'Best Price Site',
+            'CPR:Site Region of Best Price Line (Global)': 'Best Price Region',
+            'CPR:Supplier Name of Best Price Line (Global)': 'Best Price Supplier',
+            'CPR:Total Opportunity (EUR), including Logistics Simulation (Global)': 'Total Opportunity'
+        }
+        df = df.rename(columns=column_mapping)
 
+        # Convert numeric columns
+        for col in df.select_dtypes(include=['object']).columns:
+            try:
+                df[col] = pd.to_numeric(df[col].str.replace(',', ''))
+            except:
+                pass
+
+        # Apply filters
+        india_sites = ['IN Bangalore ITB', 'IN Chennai', 'IN Hyderabad', 'IN Bangalore SEPFC']
+        category_codes = ('A', 'B', 'C', 'D', 'H', 'K', 'G', 'E', 'P1', 'P2', 'M1', 'M2')
+        
+        df_filtered = df[
+            (df['Site Name'].isin(india_sites)) & 
+            (df['Category Code'].str.startswith(category_codes))
+        ]
+
+        # Apply spend and region filters
+        df_filtered = df_filtered[
+            (df_filtered['Spend (EUR)'] > 50000) & 
+            (df_filtered['Best Price Region'] != 'India / MEA') & 
+            (df_filtered['Total Opportunity'] <= -5000)
+        ]
+
+        # Calculate ratio
+        df_filtered['Qty/projection'] = ((df_filtered['Best Price Quantity'] / df_filtered['12m Projection Quantity']) * 100)
+        
+        # Filter one-time buys
+        df_filtered = df_filtered[df_filtered['Qty/projection'] > 5]
+
+        # Add absolute opportunity column for visualization
+        df_filtered['Absolute Opportunity'] = df_filtered['Total Opportunity'].abs()
+
+        # Format float values
+        for col in df_filtered.select_dtypes(include=['float64']).columns:
+            df_filtered[col] = df_filtered[col].round(2)
+
+        return df_filtered
+    except Exception as e:
+        st.error(f"Error processing data: {str(e)}")
+        return None
+
+def generate_insights(df):
+    """Generate key insights from the processed data"""
+    total_opportunity = df['Total Opportunity'].sum()
+    avg_qty_projection = df['Qty/projection'].mean()
+    
+    # Use absolute values for top suppliers
+    top_suppliers = df.groupby('Supplier Name')['Absolute Opportunity'].sum().sort_values(ascending=False).head(5)
+    top_categories = df.groupby('Category Code')['Absolute Opportunity'].sum().sort_values(ascending=False).head(5)
+    
+    return {
+        'total_opportunity': total_opportunity,
+        'avg_qty_projection': avg_qty_projection,
+        'top_suppliers': top_suppliers,
+        'top_categories': top_categories
+    }
 def create_visualizations(df):
     """Create visualizations using Plotly with Schneider Electric theme"""
     template = {

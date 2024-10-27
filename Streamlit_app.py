@@ -1,4 +1,3 @@
-# app.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -38,16 +37,25 @@ def process_dataframe(df):
             'CPR:Site Name of Best Price Line (Global)': 'Best Price Site',
             'CPR:Site Region of Best Price Line (Global)': 'Best Price Region',
             'CPR:Supplier Name of Best Price Line (Global)': 'Best Price Supplier',
-            'CPR:Total Opportunity (EUR), including Logistics Simulation (Global)': 'Total Opportunity'
+            'CPR:Total Opportunity (EUR), including Logistics Simulation (Global)': 'Total Opportunity',
+            'Site Name (Current)': 'Site Name',  # Added missing column mapping
+            'Spend (EUR)': 'Spend (EUR)',        # Added missing column mapping
+            'Category Code': 'Category Code'      # Added missing column mapping
         }
+        
+        # Check for required columns
+        missing_columns = [col for col in column_mapping.keys() if col not in df.columns]
+        if missing_columns:
+            raise ValueError(f"Missing required columns: {', '.join(missing_columns)}")
+            
         df = df.rename(columns=column_mapping)
 
         # Convert numeric columns
-        for col in df.select_dtypes(include=['object']).columns:
-            try:
-                df[col] = pd.to_numeric(df[col].str.replace(',', ''))
-            except:
-                pass
+        numeric_columns = ['12m Projection Quantity', 'Unit Price in Euros', 'Best Price in Euros', 
+                         'Best Price Quantity', 'Total Opportunity', 'Spend (EUR)']
+        for col in numeric_columns:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col].str.replace(',', ''), errors='coerce')
 
         # Apply filters
         india_sites = ['IN Bangalore ITB', 'IN Chennai', 'IN Hyderabad', 'IN Bangalore SEPFC']
@@ -65,15 +73,16 @@ def process_dataframe(df):
             (df_filtered['Total Opportunity'] <= -5000)
         ]
 
-        # Calculate ratio
+        # Calculate ratios and absolute opportunity
         df_filtered['Qty/projection'] = ((df_filtered['Best Price Quantity'] / df_filtered['12m Projection Quantity']) * 100)
+        df_filtered['Absolute Opportunity'] = df_filtered['Total Opportunity'].abs()  # Added missing calculation
         
         # Filter one-time buys
         df_filtered = df_filtered[df_filtered['Qty/projection'] > 5]
 
         # Format float values
-        for col in df_filtered.select_dtypes(include=['float64']).columns:
-            df_filtered[col] = df_filtered[col].round(2)
+        float_columns = df_filtered.select_dtypes(include=['float64']).columns
+        df_filtered[float_columns] = df_filtered[float_columns].round(2)
 
         return df_filtered
     except Exception as e:
@@ -98,7 +107,7 @@ def create_visualizations(df):
     """Create visualizations using Plotly"""
     # Opportunity by Category
     category_data = df.groupby('Category Code')['Absolute Opportunity'].sum().reset_index()
-    category_data = category_data.sort_values('Absolute Opportunity', ascending=False)  # Changed to sort descending
+    category_data = category_data.sort_values('Absolute Opportunity', ascending=False)
     
     fig1 = px.bar(
         category_data,
@@ -110,7 +119,7 @@ def create_visualizations(df):
     fig1.update_layout(
         yaxis_title="Category Code", 
         xaxis_title="Savings Opportunity (EUR)",
-        height=500  # Made taller to better show all categories
+        height=500
     )
 
     # Opportunity by Supplier (Top 10)
@@ -195,28 +204,31 @@ def main():
                 # Create tabs for different views
                 tab1, tab2, tab3 = st.tabs(["Visualizations", "Data Table", "Top Analysis"])
 
-                    with tab1:
-                    # Display visualizations in a grid
+                with tab1:
                     figures = create_visualizations(df_processed)
-                    
-                    # Display Category Analysis
                     st.plotly_chart(figures[0], use_container_width=True)
                     
-                    # Display Supplier Analysis
                     col1, col2 = st.columns(2)
                     with col1:
                         st.plotly_chart(figures[1], use_container_width=True)
                     with col2:
                         st.plotly_chart(figures[2], use_container_width=True)
-                    with col2:
                         st.subheader("Top Categories")
                         st.table(insights['top_categories'])
+                
+                with tab2:
+                    st.dataframe(df_processed)
+                    st.markdown(get_table_download_link(df_processed), unsafe_allow_html=True)
+                
+                with tab3:
+                    st.subheader("Top Suppliers Analysis")
+                    st.table(insights['top_suppliers'])
 
             else:
                 st.warning("No data matches the filtering criteria.")
 
         except Exception as e:
-            st.error(f"Error: {str(e)}")
+            st.error(f"Error processing data: {str(e)}")
             st.info("Please ensure your file has the required columns and format.")
 
 if __name__ == "__main__":

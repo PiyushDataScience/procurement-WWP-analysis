@@ -5,8 +5,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
 import base64
-from streamlit_lottie import st_lottie
-import requests
 import time
 
 # Schneider Electric Brand Colors
@@ -19,16 +17,6 @@ SCHNEIDER_COLORS = {
     'accent_blue': '#007ACC',
     'chart_colors': ['#3DCD58', '#004F3B', '#007ACC', '#00A6A0', '#676767', '#CCCCCC']
 }
-
-def load_lottie_url(url: str):
-    """Load Lottie animation from URL"""
-    try:
-        r = requests.get(url)
-        if r.status_code != 200:
-            return None
-        return r.json()
-    except:
-        return None
 
 def load_css():
     """Load custom CSS styles with Schneider Electric branding"""
@@ -104,14 +92,23 @@ def load_css():
             border-radius: 0.5rem;
             margin-bottom: 2rem;
         }}
+        .upload-message {{
+            text-align: center;
+            padding: 2rem;
+            border: 2px dashed {SCHNEIDER_COLORS['primary_green']};
+            border-radius: 1rem;
+            margin: 2rem 0;
+        }}
+        .header-container {{
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: linear-gradient(90deg, rgba(0,79,59,0.2), transparent);
+            border-radius: 0.5rem;
+        }}
         </style>
     """, unsafe_allow_html=True)
-
-def show_loading_animation():
-    """Display a loading animation"""
-    loading_animation = load_lottie_url("https://assets5.lottiefiles.com/packages/lf20_qjosmr4w.json")
-    if loading_animation:
-        st_lottie(loading_animation, height=200, key="loading")
 
 def create_visualizations(df):
     """Create visualizations using Plotly with Schneider Electric theme"""
@@ -202,29 +199,35 @@ def main():
     load_css()
 
     # Header with logo
-    col1, col2 = st.columns([1, 4])
-    with col1:
-        st.image("https://www.se.com/ww/en/assets/564/media/59531/570/320/logo-schneider-electric.png", width=150)
-    with col2:
-        st.title("Procurement Data Analysis Tool")
-        st.markdown("""
-        <div style='color: #3DCD58; margin-bottom: 2rem;'>
-        Transform your procurement data into actionable insights
+    st.markdown("""
+        <div class="header-container">
+            <img src="https://www.se.com/ww/en/assets/564/media/59531/570/320/logo-schneider-electric.png" 
+                 style="width: 150px; margin-right: 20px;">
+            <div>
+                <h1 style="margin: 0;">Procurement Data Analysis Tool</h1>
+                <p style="color: #3DCD58; margin: 0;">Transform your procurement data into actionable insights</p>
+            </div>
         </div>
-        """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader("Upload your data file", type=['xlsx', 'csv'])
+    # File upload with styled message
+    st.markdown("""
+        <div class="upload-message">
+            <h3 style="color: #3DCD58;">Upload Your Data File</h3>
+            <p>Supported formats: Excel (.xlsx) or CSV (.csv)</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    uploaded_file = st.file_uploader("", type=['xlsx', 'csv'])
 
     if uploaded_file is not None:
-        show_loading_animation()
-        
         try:
             with st.spinner('Processing your data...'):
                 if uploaded_file.name.endswith('.csv'):
                     df = pd.read_csv(uploaded_file)
                 else:
                     df = pd.read_excel(uploaded_file)
-                time.sleep(1)  # Add slight delay for visual effect
+                time.sleep(0.5)  # Short delay for visual feedback
 
             st.success("✅ File uploaded and processed successfully!")
 
@@ -235,7 +238,7 @@ def main():
                 # Generate insights
                 insights = generate_insights(df_processed)
                 
-                # Display metrics with animation
+                # Display metrics with enhanced styling
                 st.markdown("<div class='metrics-container'>", unsafe_allow_html=True)
                 col1, col2, col3, col4 = st.columns(4)
                 

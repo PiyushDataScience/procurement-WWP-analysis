@@ -195,7 +195,7 @@ def main():
                 # Create tabs for different views
                 tab1, tab2, tab3 = st.tabs(["Visualizations", "Data Table", "Top Analysis"])
 
-                                with tab1:
+                    with tab1:
                     # Display visualizations in a grid
                     figures = create_visualizations(df_processed)
                     

@@ -41,6 +41,17 @@ def load_css():
             transform: translateY(-5px);
             box-shadow: 0 4px 15px rgba(61, 205, 88, 0.2);
         }}
+        .analysis-selector {{
+            background-color: {SCHNEIDER_COLORS['dark_green']};
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            border: 2px solid {SCHNEIDER_COLORS['primary_green']};
+        }}
+        .stSelectbox [data-baseweb="select"] {{
+            background-color: {SCHNEIDER_COLORS['dark_gray']};
+            border-color: {SCHNEIDER_COLORS['primary_green']};
+        }}
         .stMetric {{
             background-color: {SCHNEIDER_COLORS['dark_green']};
             padding: 1rem;

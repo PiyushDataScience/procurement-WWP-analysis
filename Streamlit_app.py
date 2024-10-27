@@ -97,29 +97,46 @@ def generate_insights(df):
 def create_visualizations(df):
     """Create visualizations using Plotly"""
     # Opportunity by Category
+    category_data = df.groupby('Category Code')['Absolute Opportunity'].sum().reset_index()
+    category_data = category_data.sort_values('Absolute Opportunity', ascending=False)  # Changed to sort descending
+    
     fig1 = px.bar(
-        df.groupby('Category Code')['Total Opportunity'].sum().reset_index(),
-        x='Category Code',
-        y='Total Opportunity',
-        title='Total Opportunity by Category'
+        category_data,
+        x='Absolute Opportunity',
+        y='Category Code',
+        title='Savings Opportunity by Category (EUR)',
+        orientation='h'
+    )
+    fig1.update_layout(
+        yaxis_title="Category Code", 
+        xaxis_title="Savings Opportunity (EUR)",
+        height=500  # Made taller to better show all categories
     )
 
     # Opportunity by Supplier (Top 10)
+    supplier_data = df.groupby('Supplier Name')['Absolute Opportunity'].sum().sort_values(ascending=False).head(10).reset_index()
+    
     fig2 = px.pie(
-        df.groupby('Supplier Name')['Total Opportunity'].sum().sort_values()
-        .head(10).reset_index(),
-        values='Total Opportunity',
+        supplier_data,
+        values='Absolute Opportunity',
         names='Supplier Name',
-        title='Top 10 Suppliers by Opportunity'
+        title='Top 10 Suppliers by Savings Opportunity'
     )
+    fig2.update_traces(textposition='inside', textinfo='percent+label')
+    fig2.update_layout(height=500)
 
-    # Scatter plot of Quantity vs Projection
-    fig3 = px.scatter(
-        df,
-        x='12m Projection Quantity',
-        y='Best Price Quantity',
-        color='Category Code',
-        title='Quantity vs Projection by Category'
+    # Add a bar chart for top suppliers
+    fig3 = px.bar(
+        supplier_data,
+        x='Supplier Name',
+        y='Absolute Opportunity',
+        title='Top 10 Suppliers by Savings Opportunity (EUR)',
+    )
+    fig3.update_layout(
+        xaxis_title="Supplier Name",
+        yaxis_title="Savings Opportunity (EUR)",
+        xaxis={'tickangle': 45},
+        height=500
     )
 
     return [fig1, fig2, fig3]
@@ -178,21 +195,19 @@ def main():
                 # Create tabs for different views
                 tab1, tab2, tab3 = st.tabs(["Visualizations", "Data Table", "Top Analysis"])
 
-                with tab1:
-                    # Display visualizations
+                                with tab1:
+                    # Display visualizations in a grid
                     figures = create_visualizations(df_processed)
-                    for fig in figures:
-                        st.plotly_chart(fig, use_container_width=True)
-
-                with tab2:
-                    st.dataframe(df_processed)
-                    st.markdown(get_table_download_link(df_processed), unsafe_allow_html=True)
-
-                with tab3:
+                    
+                    # Display Category Analysis
+                    st.plotly_chart(figures[0], use_container_width=True)
+                    
+                    # Display Supplier Analysis
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.subheader("Top Suppliers")
-                        st.table(insights['top_suppliers'])
+                        st.plotly_chart(figures[1], use_container_width=True)
+                    with col2:
+                        st.plotly_chart(figures[2], use_container_width=True)
                     with col2:
                         st.subheader("Top Categories")
                         st.table(insights['top_categories'])

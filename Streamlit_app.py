@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -37,25 +38,16 @@ def process_dataframe(df):
             'CPR:Site Name of Best Price Line (Global)': 'Best Price Site',
             'CPR:Site Region of Best Price Line (Global)': 'Best Price Region',
             'CPR:Supplier Name of Best Price Line (Global)': 'Best Price Supplier',
-            'CPR:Total Opportunity (EUR), including Logistics Simulation (Global)': 'Total Opportunity',
-            'Site Name (Current)': 'Site Name',  # Added missing column mapping
-            'Spend (EUR)': 'Spend (EUR)',        # Added missing column mapping
-            'Category Code': 'Category Code'      # Added missing column mapping
+            'CPR:Total Opportunity (EUR), including Logistics Simulation (Global)': 'Total Opportunity'
         }
-        
-        # Check for required columns
-        missing_columns = [col for col in column_mapping.keys() if col not in df.columns]
-        if missing_columns:
-            raise ValueError(f"Missing required columns: {', '.join(missing_columns)}")
-            
         df = df.rename(columns=column_mapping)
 
         # Convert numeric columns
-        numeric_columns = ['12m Projection Quantity', 'Unit Price in Euros', 'Best Price in Euros', 
-                         'Best Price Quantity', 'Total Opportunity', 'Spend (EUR)']
-        for col in numeric_columns:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col].str.replace(',', ''), errors='coerce')
+        for col in df.select_dtypes(include=['object']).columns:
+            try:
+                df[col] = pd.to_numeric(df[col].str.replace(',', ''))
+            except:
+                pass
 
         # Apply filters
         india_sites = ['IN Bangalore ITB', 'IN Chennai', 'IN Hyderabad', 'IN Bangalore SEPFC']
@@ -73,16 +65,18 @@ def process_dataframe(df):
             (df_filtered['Total Opportunity'] <= -5000)
         ]
 
-        # Calculate ratios and absolute opportunity
+        # Calculate ratio
         df_filtered['Qty/projection'] = ((df_filtered['Best Price Quantity'] / df_filtered['12m Projection Quantity']) * 100)
-        df_filtered['Absolute Opportunity'] = df_filtered['Total Opportunity'].abs()  # Added missing calculation
         
         # Filter one-time buys
         df_filtered = df_filtered[df_filtered['Qty/projection'] > 5]
 
+        # Add absolute opportunity column for visualization
+        df_filtered['Absolute Opportunity'] = df_filtered['Total Opportunity'].abs()
+
         # Format float values
-        float_columns = df_filtered.select_dtypes(include=['float64']).columns
-        df_filtered[float_columns] = df_filtered[float_columns].round(2)
+        for col in df_filtered.select_dtypes(include=['float64']).columns:
+            df_filtered[col] = df_filtered[col].round(2)
 
         return df_filtered
     except Exception as e:
@@ -93,8 +87,10 @@ def generate_insights(df):
     """Generate key insights from the processed data"""
     total_opportunity = df['Total Opportunity'].sum()
     avg_qty_projection = df['Qty/projection'].mean()
-    top_suppliers = df['Supplier Name'].value_counts().head(5)
-    top_categories = df['Category Code'].value_counts().head(5)
+    
+    # Use absolute values for top suppliers
+    top_suppliers = df.groupby('Supplier Name')['Absolute Opportunity'].sum().sort_values(ascending=False).head(5)
+    top_categories = df.groupby('Category Code')['Absolute Opportunity'].sum().sort_values(ascending=False).head(5)
     
     return {
         'total_opportunity': total_opportunity,
@@ -107,7 +103,7 @@ def create_visualizations(df):
     """Create visualizations using Plotly"""
     # Opportunity by Category
     category_data = df.groupby('Category Code')['Absolute Opportunity'].sum().reset_index()
-    category_data = category_data.sort_values('Absolute Opportunity', ascending=False)
+    category_data = category_data.sort_values('Absolute Opportunity', ascending=True)
     
     fig1 = px.bar(
         category_data,
@@ -116,11 +112,7 @@ def create_visualizations(df):
         title='Savings Opportunity by Category (EUR)',
         orientation='h'
     )
-    fig1.update_layout(
-        yaxis_title="Category Code", 
-        xaxis_title="Savings Opportunity (EUR)",
-        height=500
-    )
+    fig1.update_layout(yaxis_title="Category Code", xaxis_title="Savings Opportunity (EUR)",height=500)
 
     # Opportunity by Supplier (Top 10)
     supplier_data = df.groupby('Supplier Name')['Absolute Opportunity'].sum().sort_values(ascending=False).head(10).reset_index()
@@ -132,7 +124,6 @@ def create_visualizations(df):
         title='Top 10 Suppliers by Savings Opportunity'
     )
     fig2.update_traces(textposition='inside', textinfo='percent+label')
-    fig2.update_layout(height=500)
 
     # Add a bar chart for top suppliers
     fig3 = px.bar(
@@ -149,6 +140,21 @@ def create_visualizations(df):
     )
 
     return [fig1, fig2, fig3]
+
+    # Add a new bar chart for top suppliers
+    fig4 = px.bar(
+        supplier_data,
+        x='Supplier Name',
+        y='Absolute Opportunity',
+        title='Top 10 Suppliers by Savings Opportunity (EUR)',
+    )
+    fig4.update_layout(
+        xaxis_title="Supplier Name",
+        yaxis_title="Savings Opportunity (EUR)",
+        xaxis={'tickangle': 45}
+    )
+
+    return [fig1, fig2, fig3, fig4]
 
 def get_table_download_link(df):
     """Generate a download link for the processed data"""
@@ -193,7 +199,7 @@ def main():
                 # Display metrics
                 col1, col2, col3, col4 = st.columns(4)
                 with col1:
-                    st.metric("Total Opportunity (EUR)", f"{insights['total_opportunity']:,.2f}")
+                    st.metric("Total Savings Opportunity (EUR)", f"{abs(insights['total_opportunity']):,.2f}")
                 with col2:
                     st.metric("Average Qty/Projection Ratio", f"{insights['avg_qty_projection']:.2f}%")
                 with col3:
@@ -205,30 +211,46 @@ def main():
                 tab1, tab2, tab3 = st.tabs(["Visualizations", "Data Table", "Top Analysis"])
 
                 with tab1:
+                    # Display visualizations in a grid
                     figures = create_visualizations(df_processed)
+                    
+                    # Display Category Analysis
                     st.plotly_chart(figures[0], use_container_width=True)
                     
+                    # Display Supplier Analysis
                     col1, col2 = st.columns(2)
                     with col1:
                         st.plotly_chart(figures[1], use_container_width=True)
                     with col2:
                         st.plotly_chart(figures[2], use_container_width=True)
-                        st.subheader("Top Categories")
-                        st.table(insights['top_categories'])
-                
+
                 with tab2:
                     st.dataframe(df_processed)
                     st.markdown(get_table_download_link(df_processed), unsafe_allow_html=True)
-                
+
                 with tab3:
-                    st.subheader("Top Suppliers Analysis")
-                    st.table(insights['top_suppliers'])
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.subheader("Top Suppliers by Savings Opportunity")
+                        supplier_table = pd.DataFrame({
+                            'Supplier': insights['top_suppliers'].index,
+                            'Savings Opportunity (EUR)': insights['top_suppliers'].values.round(2)
+                        })
+                        st.table(supplier_table)
+                    
+                    with col2:
+                        st.subheader("Top Categories by Savings Opportunity")
+                        category_table = pd.DataFrame({
+                            'Category': insights['top_categories'].index,
+                            'Savings Opportunity (EUR)': insights['top_categories'].values.round(2)
+                        })
+                        st.table(category_table)
 
             else:
                 st.warning("No data matches the filtering criteria.")
 
         except Exception as e:
-            st.error(f"Error processing data: {str(e)}")
+            st.error(f"Error: {str(e)}")
             st.info("Please ensure your file has the required columns and format.")
 
 if __name__ == "__main__":

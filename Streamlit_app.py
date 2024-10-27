@@ -120,7 +120,7 @@ def load_css():
         }}
         </style>
     """, unsafe_allow_html=True)
-def process_dataframe(df):
+def process_wwp_data(df):
     """Process the input dataframe according to business logic"""
     try:
         # Rename columns
@@ -176,9 +176,82 @@ def process_dataframe(df):
 
         return df_filtered
     except Exception as e:
-        st.error(f"Error processing data: {str(e)}")
+        st.error(f"Error processing WWP data: {str(e)}")
         return None
-
+        
+def process_open_po_data(df):
+    try:
+        # Filter Open_PO_BEF for LINE_TYPE = Inventory
+        Open_PO_BEF = Open_PO_BEF[Open_PO_BEF['LINE_TYPE'] == 'Inventory']
+        # Merge Open_PO_BEF and WB on 'ITEM' and 'VENDOR_NUM'
+        merged_df = pd.merge(WB,Open_PO_BEF,left_on=['PART_NUMBER', 'VENDOR_NUM'], right_on=['ITEM', 'VENDOR_NUM'], how='inner')
+        merged_df.columns = merged_df.columns.str.strip()
+        # Drop the 'Item' column
+        merged_df = merged_df.drop('ITEM', axis=1)
+        
+        # Rename columns
+        merged_df = merged_df.rename(columns={
+            'DANDB': 'VENDOR_DUNS',
+            'UNIT_PRICE_x': 'Unit_Price_WB',
+            'CURRENCY_CODE': 'CURRENCY_CODE_WB',
+            'UNIT_PRICE_y': 'UNIT_PRICE_OPO',
+            'CURRNECY': 'CURRNECY_OPO'
+        })
+        
+        # Reorder columns
+        new_column_order = ['ORDER_TYPE', 'PART_NUMBER', 'ASL_MPN', 'DESCRIPTION', 'VENDOR_NAME', 'VENDOR_DUNS', 'VENDOR_NUM', 'STARS Category Code', 'PO_NUM', 'RELEASE_NUM', 'LINE_NUM', 'SHIPMENT_NUM', 'AUTHORIZATION_STATUS', 'PO_SHIPMENT_CREATION_DATE', 'QTY_ELIGIBLE_TO_SHIP', 'Unit_Price_WB', 'CURRENCY_CODE_WB', 'UNIT_PRICE_OPO', 'CURRNECY_OPO']
+        merged_df = merged_df[new_column_order]
+        # Drop Dublicates
+        merged_df = merged_df.drop_duplicates()
+        #IG/OG Column
+        # Insert a new column named 'IG/OG' at index 8
+        merged_df.insert(8, 'IG/OG', '')
+        
+        # Define a function to map Vendor to IG/OG based on Vendor Name
+        def map_vendor_to_ig_og(vendor_name):
+          if 'SCHNEIDER' in vendor_name or 'WUXI' in vendor_name:
+            return 'IG'
+          else:
+            return 'OG'
+        
+        # Apply the function to the 'VENDOR_NAME' column to populate the 'IG/OG' column
+        merged_df['IG/OG'] = merged_df['VENDOR_NAME'].apply(map_vendor_to_ig_og)
+        # PO Year
+        merged_df.insert(14, 'PO Year', pd.to_datetime(merged_df['PO_SHIPMENT_CREATION_DATE']).dt.year)
+        # Prices in Euros
+        # Create a dictionary to store the latest conversion rates (replace with your actual rates)
+        conversion_rates = {
+            'USD': 0.93,  # Example: USD to EUR rate
+            'GBP': 1.2,  # Example: GBP to EUR rate
+            'INR': 0.011,
+            'JPY': 0.0061
+        }
+        def convert_to_euro(price, currency):
+          """Converts a price to Euros based on the provided currency."""
+          if currency in conversion_rates:
+            return price * conversion_rates[currency]
+          else:
+            return None 
+        # Apply the conversion function to the 'Unit_Price_WB' and 'UNIT_PRICE_OPO' columns
+        merged_df['UNIT_PRICE_WB_EUR'] = merged_df.apply(
+            lambda row: convert_to_euro(row['Unit_Price_WB'], row['CURRENCY_CODE_WB']), axis=1
+        )
+        
+        merged_df['UNIT_PRICE_OPO_EUR'] = merged_df.apply(
+            lambda row: convert_to_euro(row['UNIT_PRICE_OPO'], row['CURRNECY_OPO']), axis=1
+        )
+        # Calculate Price_Delta
+        merged_df['Price_Delta'] = merged_df['UNIT_PRICE_OPO_EUR'] - merged_df['UNIT_PRICE_WB_EUR']
+        
+        # Calculate Impact in Euros
+        merged_df['Impact in Euros'] = merged_df['Price_Delta'] * merged_df['QTY_ELIGIBLE_TO_SHIP']
+        
+        # Calculate Open PO Value
+        merged_df['Open PO Value'] = merged_df['QTY_ELIGIBLE_TO_SHIP'] * merged_df['UNIT_PRICE_OPO_EUR']
+        #Sort the data
+        merged_df = merged_df.sort_values('Impact in Euros', ascending=False)
+        
+    
 def generate_insights(df):
     """Generate key insights from the processed data"""
     total_opportunity = df['Total Opportunity'].sum()
@@ -294,14 +367,36 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
-    # File upload with styled message
+    # Analysis Type Selection
     st.markdown("""
-        <div class="upload-message">
-            <h3 style="color: #3DCD58;">Upload Your Data File</h3>
-            <p>Supported formats: Excel (.xlsx) or CSV (.csv)</p>
+        <div class="analysis-selector">
+            <h3 style="color: #3DCD58; margin-bottom: 1rem;">Select Analysis Type</h3>
         </div>
     """, unsafe_allow_html=True)
-    
+    analysis_type = st.selectbox(
+        "",
+        options=["World Wide Price (WWP)", "Open Purchase Order (PO)"],
+        index=0,
+        key="analysis_type"
+    )
+
+
+    # File upload with styled message
+    if analysis_type == "World Wide Price (WWP)":
+        st.markdown("""
+            <div class="upload-message">
+                <h3 style="color: #3DCD58;">Upload WWP Data File</h3>
+                <p>Upload your World Wide Price analysis data file</p>
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+            <div class="upload-message">
+                <h3 style="color: #3DCD58;">Upload Open PO Data File</h3>
+                <p>Upload your Open Purchase Order analysis data file</p>
+            </div>
+        """, unsafe_allow_html=True)
+
     uploaded_file = st.file_uploader("", type=['xlsx', 'csv'])
 
     if uploaded_file is not None:
@@ -311,17 +406,30 @@ def main():
                     df = pd.read_csv(uploaded_file)
                 else:
                     df = pd.read_excel(uploaded_file)
-                time.sleep(0.5)  # Short delay for visual feedback
+                time.sleep(0.5)
 
             st.success("✅ File uploaded and processed successfully!")
 
-            # Process data
-            df_processed = process_dataframe(df)
-            
-            if df_processed is not None and not df_processed.empty:
-                # Generate insights
-                insights = generate_insights(df_processed)
-                
+            # Process data based on analysis type
+            if analysis_type == "World Wide Price (WWP)":
+                df_processed = process_wwp_data(df)
+                if df_processed is not None and not df_processed.empty:
+                    # Existing WWP visualization and analysis code
+                    insights = generate_insights(df_processed)
+                    # ... rest of your WWP visualization code
+            else:
+                df_processed = process_open_po_data(df)
+                if df_processed is not None and not df_processed.empty:
+                    # New Open PO visualization and analysis code
+                    # Add your Open PO specific visualizations here
+                    pass
+
+            if df_processed is None or df_processed.empty:
+                st.warning("⚠️ No data matches the filtering criteria.")
+
+        except Exception as e:
+            st.error(f"❌ Error: {str(e)}")
+            st.info("📝 Please ensure your file has the required columns and format.")
                 # Display metrics with enhanced styling
                 st.markdown("<div class='metrics-container'>", unsafe_allow_html=True)
                 col1, col2, col3, col4 = st.columns(4)

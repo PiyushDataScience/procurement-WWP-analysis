@@ -274,7 +274,7 @@ def main():
     # Header with logo
     st.markdown("""
         <div class="header-container">
-            <img src="https://www.se.com/ww/en/assets/564/media/59531/570/320/logo-schneider-electric.png" 
+            <img src="https://www.se.com/ww/en/assets/wiztopic/615aeb0184d20b323d58575e/Schneider-Electric-logo-jpg-_original.jpg" 
                  style="width: 150px; margin-right: 20px;">
             <div>
                 <h1 style="margin: 0;">Procurement Data Analysis Tool</h1>

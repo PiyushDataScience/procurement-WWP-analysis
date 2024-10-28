@@ -2,125 +2,29 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 from pathlib import Path
 import base64
-import time
-
-# Schneider Electric Brand Colors
-SCHNEIDER_COLORS = {
-    'primary_green': '#3DCD58',
-    'dark_green': '#004F3B',
-    'light_gray': '#F5F5F5',
-    'dark_gray': '#333333',
-    'white': '#FFFFFF',
-    'accent_blue': '#007ACC',
-    'chart_colors': ['#3DCD58', '#004F3B', '#007ACC', '#00A6A0', '#676767', '#CCCCCC']
-}
 
 def load_css():
-    """Load custom CSS styles with Schneider Electric branding"""
-    st.markdown(f"""
+    """Load custom CSS styles"""
+    st.markdown("""
         <style>
-        .main {{
-            background-color: #1E1E1E;
-            color: {SCHNEIDER_COLORS['white']};
-        }}
-        .stApp {{
-            background-color: #1E1E1E;
-        }}
-        .metric-card {{
-            background-color: {SCHNEIDER_COLORS['dark_green']};
-            border: 1px solid {SCHNEIDER_COLORS['primary_green']};
-            padding: 1.5rem;
-            border-radius: 0.8rem;
+        .main {
+            padding: 2rem;
+        }
+        .stAlert {
+            margin-top: 1rem;
+        }
+        .metric-card {
+            border: 1px solid #e6e6e6;
+            padding: 1rem;
+            border-radius: 0.5rem;
             margin: 0.5rem 0;
-            transition: transform 0.3s ease;
-        }}
-        .metric-card:hover {{
-            transform: translateY(-5px);
-            box-shadow: 0 4px 15px rgba(61, 205, 88, 0.2);
-        }}
-        .analysis-selector {{
-            background-color: {SCHNEIDER_COLORS['dark_green']};
-            padding: 2rem;
-            border-radius: 1rem;
-            margin-bottom: 2rem;
-            border: 2px solid {SCHNEIDER_COLORS['primary_green']};
-        }}
-        .stSelectbox [data-baseweb="select"] {{
-            background-color: {SCHNEIDER_COLORS['dark_gray']};
-            border-color: {SCHNEIDER_COLORS['primary_green']};
-        }}
-        .stMetric {{
-            background-color: {SCHNEIDER_COLORS['dark_green']};
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid {SCHNEIDER_COLORS['primary_green']};
-        }}
-        .stMetric:hover {{
-            border-color: {SCHNEIDER_COLORS['accent_blue']};
-        }}
-        .stTabs [data-baseweb="tab-list"] {{
-            gap: 2rem;
-            background-color: transparent;
-        }}
-        .stTabs [data-baseweb="tab"] {{
-            color: {SCHNEIDER_COLORS['white']};
-            background-color: transparent;
-            border-radius: 4px;
-            padding: 0.5rem 1rem;
-            transition: all 0.3s ease;
-        }}
-        .stTabs [data-baseweb="tab"]:hover {{
-            color: {SCHNEIDER_COLORS['primary_green']};
-            background-color: rgba(61, 205, 88, 0.1);
-        }}
-        .stDataFrame {{
-            background-color: #2D2D2D;
-            border-radius: 0.5rem;
-            border: 1px solid {SCHNEIDER_COLORS['primary_green']};
-        }}
-        .download-link {{
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            background-color: {SCHNEIDER_COLORS['primary_green']};
-            color: white;
-            text-decoration: none;
-            border-radius: 0.3rem;
-            margin: 1rem 0;
-            transition: background-color 0.3s ease;
-        }}
-        .download-link:hover {{
-            background-color: {SCHNEIDER_COLORS['dark_green']};
-        }}
-        .title-container {{
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem;
-            background: linear-gradient(90deg, {SCHNEIDER_COLORS['dark_green']}, transparent);
-            border-radius: 0.5rem;
-            margin-bottom: 2rem;
-        }}
-        .upload-message {{
-            text-align: center;
-            padding: 2rem;
-            border: 2px dashed {SCHNEIDER_COLORS['primary_green']};
-            border-radius: 1rem;
-            margin: 2rem 0;
-        }}
-        .header-container {{
-            display: flex;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding: 1rem;
-            background: linear-gradient(90deg, rgba(0,79,59,0.2), transparent);
-            border-radius: 0.5rem;
-        }}
+        }
         </style>
     """, unsafe_allow_html=True)
-def process_wwp_data(df):
+
+def process_dataframe(df):
     """Process the input dataframe according to business logic"""
     try:
         # Rename columns
@@ -176,82 +80,9 @@ def process_wwp_data(df):
 
         return df_filtered
     except Exception as e:
-        st.error(f"Error processing WWP data: {str(e)}")
+        st.error(f"Error processing data: {str(e)}")
         return None
-        
-def process_open_po_data(df):
-    try:
-        # Filter Open_PO_BEF for LINE_TYPE = Inventory
-        Open_PO_BEF = Open_PO_BEF[Open_PO_BEF['LINE_TYPE'] == 'Inventory']
-        # Merge Open_PO_BEF and WB on 'ITEM' and 'VENDOR_NUM'
-        merged_df = pd.merge(WB,Open_PO_BEF,left_on=['PART_NUMBER', 'VENDOR_NUM'], right_on=['ITEM', 'VENDOR_NUM'], how='inner')
-        merged_df.columns = merged_df.columns.str.strip()
-        # Drop the 'Item' column
-        merged_df = merged_df.drop('ITEM', axis=1)
-        
-        # Rename columns
-        merged_df = merged_df.rename(columns={
-            'DANDB': 'VENDOR_DUNS',
-            'UNIT_PRICE_x': 'Unit_Price_WB',
-            'CURRENCY_CODE': 'CURRENCY_CODE_WB',
-            'UNIT_PRICE_y': 'UNIT_PRICE_OPO',
-            'CURRNECY': 'CURRNECY_OPO'
-        })
-        
-        # Reorder columns
-        new_column_order = ['ORDER_TYPE', 'PART_NUMBER', 'ASL_MPN', 'DESCRIPTION', 'VENDOR_NAME', 'VENDOR_DUNS', 'VENDOR_NUM', 'STARS Category Code', 'PO_NUM', 'RELEASE_NUM', 'LINE_NUM', 'SHIPMENT_NUM', 'AUTHORIZATION_STATUS', 'PO_SHIPMENT_CREATION_DATE', 'QTY_ELIGIBLE_TO_SHIP', 'Unit_Price_WB', 'CURRENCY_CODE_WB', 'UNIT_PRICE_OPO', 'CURRNECY_OPO']
-        merged_df = merged_df[new_column_order]
-        # Drop Dublicates
-        merged_df = merged_df.drop_duplicates()
-        #IG/OG Column
-        # Insert a new column named 'IG/OG' at index 8
-        merged_df.insert(8, 'IG/OG', '')
-        
-        # Define a function to map Vendor to IG/OG based on Vendor Name
-        def map_vendor_to_ig_og(vendor_name):
-          if 'SCHNEIDER' in vendor_name or 'WUXI' in vendor_name:
-            return 'IG'
-          else:
-            return 'OG'
-        
-        # Apply the function to the 'VENDOR_NAME' column to populate the 'IG/OG' column
-        merged_df['IG/OG'] = merged_df['VENDOR_NAME'].apply(map_vendor_to_ig_og)
-        # PO Year
-        merged_df.insert(14, 'PO Year', pd.to_datetime(merged_df['PO_SHIPMENT_CREATION_DATE']).dt.year)
-        # Prices in Euros
-        # Create a dictionary to store the latest conversion rates (replace with your actual rates)
-        conversion_rates = {
-            'USD': 0.93,  # Example: USD to EUR rate
-            'GBP': 1.2,  # Example: GBP to EUR rate
-            'INR': 0.011,
-            'JPY': 0.0061
-        }
-        def convert_to_euro(price, currency):
-          """Converts a price to Euros based on the provided currency."""
-          if currency in conversion_rates:
-            return price * conversion_rates[currency]
-          else:
-            return None 
-        # Apply the conversion function to the 'Unit_Price_WB' and 'UNIT_PRICE_OPO' columns
-        merged_df['UNIT_PRICE_WB_EUR'] = merged_df.apply(
-            lambda row: convert_to_euro(row['Unit_Price_WB'], row['CURRENCY_CODE_WB']), axis=1
-        )
-        
-        merged_df['UNIT_PRICE_OPO_EUR'] = merged_df.apply(
-            lambda row: convert_to_euro(row['UNIT_PRICE_OPO'], row['CURRNECY_OPO']), axis=1
-        )
-        # Calculate Price_Delta
-        merged_df['Price_Delta'] = merged_df['UNIT_PRICE_OPO_EUR'] - merged_df['UNIT_PRICE_WB_EUR']
-        
-        # Calculate Impact in Euros
-        merged_df['Impact in Euros'] = merged_df['Price_Delta'] * merged_df['QTY_ELIGIBLE_TO_SHIP']
-        
-        # Calculate Open PO Value
-        merged_df['Open PO Value'] = merged_df['QTY_ELIGIBLE_TO_SHIP'] * merged_df['UNIT_PRICE_OPO_EUR']
-        #Sort the data
-        merged_df = merged_df.sort_values('Impact in Euros', ascending=False)
-        
-    
+
 def generate_insights(df):
     """Generate key insights from the processed data"""
     total_opportunity = df['Total Opportunity'].sum()
@@ -267,19 +98,9 @@ def generate_insights(df):
         'top_suppliers': top_suppliers,
         'top_categories': top_categories
     }
-def create_visualizations(df):
-    """Create visualizations using Plotly with Schneider Electric theme"""
-    template = {
-        'layout': {
-            'plot_bgcolor': '#1E1E1E',
-            'paper_bgcolor': '#1E1E1E',
-            'font': {'color': SCHNEIDER_COLORS['white']},
-            'title': {'font': {'color': SCHNEIDER_COLORS['white']}},
-            'xaxis': {'gridcolor': '#333333', 'linecolor': '#333333'},
-            'yaxis': {'gridcolor': '#333333', 'linecolor': '#333333'}
-        }
-    }
 
+def create_visualizations(df):
+    """Create visualizations using Plotly"""
     # Opportunity by Category
     category_data = df.groupby('Category Code')['Absolute Opportunity'].sum().reset_index()
     category_data = category_data.sort_values('Absolute Opportunity', ascending=True)
@@ -289,18 +110,9 @@ def create_visualizations(df):
         x='Absolute Opportunity',
         y='Category Code',
         title='Savings Opportunity by Category (EUR)',
-        orientation='h',
-        color_discrete_sequence=[SCHNEIDER_COLORS['primary_green']]
+        orientation='h'
     )
-    fig1.update_layout(
-        template=template,
-        yaxis_title="Category Code",
-        xaxis_title="Savings Opportunity (EUR)",
-        height=500,
-        showlegend=False,
-        hovermode='closest',
-        hoverlabel=dict(bgcolor=SCHNEIDER_COLORS['dark_green'])
-    )
+    fig1.update_layout(yaxis_title="Category Code", xaxis_title="Savings Opportunity (EUR)",height=500)
 
     # Opportunity by Supplier (Top 10)
     supplier_data = df.groupby('Supplier Name')['Absolute Opportunity'].sum().sort_values(ascending=False).head(10).reset_index()
@@ -309,160 +121,103 @@ def create_visualizations(df):
         supplier_data,
         values='Absolute Opportunity',
         names='Supplier Name',
-        title='Top 10 Suppliers by Savings Opportunity',
-        color_discrete_sequence=SCHNEIDER_COLORS['chart_colors']
-    )
-    fig2.update_layout(
-        template=template,
-        hoverlabel=dict(bgcolor=SCHNEIDER_COLORS['dark_green'])
+        title='Top 10 Suppliers by Savings Opportunity'
     )
     fig2.update_traces(textposition='inside', textinfo='percent+label')
 
-    # Bar chart for top suppliers
+    # Add a bar chart for top suppliers
     fig3 = px.bar(
         supplier_data,
         x='Supplier Name',
         y='Absolute Opportunity',
         title='Top 10 Suppliers by Savings Opportunity (EUR)',
-        color_discrete_sequence=[SCHNEIDER_COLORS['primary_green']]
     )
     fig3.update_layout(
-        template=template,
         xaxis_title="Supplier Name",
         yaxis_title="Savings Opportunity (EUR)",
         xaxis={'tickangle': 45},
-        height=500,
-        showlegend=False,
-        hoverlabel=dict(bgcolor=SCHNEIDER_COLORS['dark_green'])
+        height=500
     )
 
     return [fig1, fig2, fig3]
 
+    # Add a new bar chart for top suppliers
+    fig4 = px.bar(
+        supplier_data,
+        x='Supplier Name',
+        y='Absolute Opportunity',
+        title='Top 10 Suppliers by Savings Opportunity (EUR)',
+    )
+    fig4.update_layout(
+        xaxis_title="Supplier Name",
+        yaxis_title="Savings Opportunity (EUR)",
+        xaxis={'tickangle': 45}
+    )
+
+    return [fig1, fig2, fig3, fig4]
+
 def get_table_download_link(df):
-    """Generate a styled download link for the processed data"""
+    """Generate a download link for the processed data"""
     csv = df.to_csv(index=False)
     b64 = base64.b64encode(csv.encode()).decode()
-    href = f'<a href="data:file/csv;base64,{b64}" download="processed_data.csv" class="download-link">📥 Download Processed Data</a>'
+    href = f'<a href="data:file/csv;base64,{b64}" download="processed_data.csv">Download Processed Data</a>'
     return href
 
 def main():
     st.set_page_config(
-        page_title="Schneider Electric - Procurement Analysis Tool",
-        page_icon="⚡",
-        layout="wide",
-        initial_sidebar_state="collapsed"
+        page_title="Procurement Analysis Tool",
+        page_icon="📊",
+        layout="wide"
     )
     
     load_css()
 
-    # Header with logo
+    st.title("Procurement Data Analysis Tool")
     st.markdown("""
-        <div class="header-container">
-            <img src="https://www.se.com/ww/en/assets/wiztopic/615aeb0184d20b323d58575e/Schneider-Electric-logo-jpg-_original.jpg" 
-                 style="width: 150px; margin-right: 20px;">
-            <div>
-                <h1 style="margin: 0;">Procurement Data Analysis Tool</h1>
-                <p style="color: #3DCD58; margin: 0;">Transform your procurement data into actionable insights</p>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+    This tool analyzes procurement data to identify cost-saving opportunities.
+    Upload your procurement data file (Excel/CSV) to get started.
+    """)
 
-    # Analysis Type Selection
-    st.markdown("""
-        <div class="analysis-selector">
-            <h3 style="color: #3DCD58; margin-bottom: 1rem;">Select Analysis Type</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    analysis_type = st.selectbox(
-        "",
-        options=["World Wide Price (WWP)", "Open Purchase Order (PO)"],
-        index=0,
-        key="analysis_type"
-    )
-
-
-    # File upload with styled message
-    if analysis_type == "World Wide Price (WWP)":
-        st.markdown("""
-            <div class="upload-message">
-                <h3 style="color: #3DCD58;">Upload WWP Data File</h3>
-                <p>Upload your World Wide Price analysis data file</p>
-            </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-            <div class="upload-message">
-                <h3 style="color: #3DCD58;">Upload Open PO Data File</h3>
-                <p>Upload your Open Purchase Order analysis data file</p>
-            </div>
-        """, unsafe_allow_html=True)
-
-    uploaded_file = st.file_uploader("", type=['xlsx', 'csv'])
+    uploaded_file = st.file_uploader("Upload your data file", type=['xlsx', 'csv'])
 
     if uploaded_file is not None:
         try:
-            with st.spinner('Processing your data...'):
-                if uploaded_file.name.endswith('.csv'):
-                    df = pd.read_csv(uploaded_file)
-                else:
-                    df = pd.read_excel(uploaded_file)
-                time.sleep(0.5)
-
-            st.success("✅ File uploaded and processed successfully!")
-
-            # Process data based on analysis type
-            if analysis_type == "World Wide Price (WWP)":
-                df_processed = process_wwp_data(df)
-                if df_processed is not None and not df_processed.empty:
-                    # Existing WWP visualization and analysis code
-                    insights = generate_insights(df_processed)
-                    # ... rest of your WWP visualization code
+            if uploaded_file.name.endswith('.csv'):
+                df = pd.read_csv(uploaded_file)
             else:
-                df_processed = process_open_po_data(df)
-                if df_processed is not None and not df_processed.empty:
-                    # New Open PO visualization and analysis code
-                    # Add your Open PO specific visualizations here
-                    pass
+                df = pd.read_excel(uploaded_file)
 
-            if df_processed is None or df_processed.empty:
-                st.warning("⚠️ No data matches the filtering criteria.")
+            st.success("File uploaded successfully!")
 
-        except Exception as e:
-            st.error(f"❌ Error: {str(e)}")
-            st.info("📝 Please ensure your file has the required columns and format.")
-                # Display metrics with enhanced styling
-                st.markdown("<div class='metrics-container'>", unsafe_allow_html=True)
-                col1, col2, col3, col4 = st.columns(4)
+            # Process data
+            df_processed = process_dataframe(df)
+            
+            if df_processed is not None and not df_processed.empty:
+                # Generate insights
+                insights = generate_insights(df_processed)
                 
+                # Display metrics
+                col1, col2, col3, col4 = st.columns(4)
                 with col1:
-                    st.metric(
-                        "💰 Total Savings Opportunity",
-                        f"€{abs(insights['total_opportunity']):,.2f}"
-                    )
+                    st.metric("Total Savings Opportunity (EUR)", f"{abs(insights['total_opportunity']):,.2f}")
                 with col2:
-                    st.metric(
-                        "📊 Avg Qty/Projection Ratio",
-                        f"{insights['avg_qty_projection']:.2f}%"
-                    )
+                    st.metric("Average Qty/Projection Ratio", f"{insights['avg_qty_projection']:.2f}%")
                 with col3:
-                    st.metric(
-                        "🔢 Number of Parts",
-                        f"{len(df_processed):,}"
-                    )
+                    st.metric("Number of Parts", len(df_processed))
                 with col4:
-                    st.metric(
-                        "🏢 Number of Suppliers",
-                        f"{df_processed['Supplier Name'].nunique():,}"
-                    )
-                st.markdown("</div>", unsafe_allow_html=True)
+                    st.metric("Number of Suppliers", df_processed['Supplier Name'].nunique())
 
                 # Create tabs for different views
-                tab1, tab2, tab3 = st.tabs(["📈 Visualizations", "📋 Data Table", "🎯 Top Analysis"])
+                tab1, tab2, tab3 = st.tabs(["Visualizations", "Data Table", "Top Analysis"])
 
                 with tab1:
+                    # Display visualizations in a grid
                     figures = create_visualizations(df_processed)
+                    
+                    # Display Category Analysis
                     st.plotly_chart(figures[0], use_container_width=True)
                     
+                    # Display Supplier Analysis
                     col1, col2 = st.columns(2)
                     with col1:
                         st.plotly_chart(figures[1], use_container_width=True)
@@ -470,45 +225,33 @@ def main():
                         st.plotly_chart(figures[2], use_container_width=True)
 
                 with tab2:
-                    st.dataframe(df_processed, height=400)
+                    st.dataframe(df_processed)
                     st.markdown(get_table_download_link(df_processed), unsafe_allow_html=True)
 
                 with tab3:
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.markdown(f"""
-                        <div class='metric-card'>
-                            <h3 style='color: {SCHNEIDER_COLORS["primary_green"]}'>
-                                🏆 Top Suppliers by Savings Opportunity
-                            </h3>
-                        """, unsafe_allow_html=True)
+                        st.subheader("Top Suppliers by Savings Opportunity")
                         supplier_table = pd.DataFrame({
                             'Supplier': insights['top_suppliers'].index,
                             'Savings Opportunity (EUR)': insights['top_suppliers'].values.round(2)
                         })
                         st.table(supplier_table)
-                        st.markdown("</div>", unsafe_allow_html=True)
                     
                     with col2:
-                        st.markdown(f"""
-                        <div class='metric-card'>
-                            <h3 style='color: {SCHNEIDER_COLORS["primary_green"]}'>
-                                📊 Top Categories by Savings Opportunity
-                            </h3>
-                        """, unsafe_allow_html=True)
+                        st.subheader("Top Categories by Savings Opportunity")
                         category_table = pd.DataFrame({
                             'Category': insights['top_categories'].index,
                             'Savings Opportunity (EUR)': insights['top_categories'].values.round(2)
                         })
                         st.table(category_table)
-                        st.markdown("</div>", unsafe_allow_html=True)
 
             else:
-                st.warning("⚠️ No data matches the filtering criteria.")
+                st.warning("No data matches the filtering criteria.")
 
         except Exception as e:
-            st.error(f"❌ Error: {str(e)}")
-            st.info("📝 Please ensure your file has the required columns and format.")
+            st.error(f"Error: {str(e)}")
+            st.info("Please ensure your file has the required columns and format.")
 
 if __name__ == "__main__":
     main()

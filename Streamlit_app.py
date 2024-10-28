@@ -172,9 +172,9 @@ def main():
     
     load_css()
 
-    st.title("Procurement Data Analysis Tool")
+    st.title("Worldwide Price Analysis")
     st.markdown("""
-    This tool analyzes procurement data to identify cost-saving opportunities.
+    This tool analyzes Worldwide price to identify cost-saving opportunities for IMEA region.
     Upload your procurement data file (Excel/CSV) to get started.
     """)
 

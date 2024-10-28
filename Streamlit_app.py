@@ -165,7 +165,7 @@ def get_table_download_link(df):
 
 def main():
     st.set_page_config(
-        page_title="Procurement Analysis Tool",
+        page_title="Worldwide Price Analysis",
         page_icon="📊",
         layout="wide"
     )

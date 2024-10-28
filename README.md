@@ -1,2 +1,2 @@
 # procurement-analytics
-Frequent analysis in SE - Procurement
+World wide price analysis
